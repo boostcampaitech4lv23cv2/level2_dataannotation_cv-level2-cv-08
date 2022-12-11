@@ -66,7 +66,7 @@ def run(args):
             st.warning('This is the first annotation.')
             
     def update_anno():
-        st.session_state["annotation_files"]['images'][img_file_name]['words'][str(st.session_state['anno_index'])].update({'transcription' : st.session_state['update']})
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'transcription' : st.session_state['update']})
         save_anno()
         
     def save_anno():
@@ -116,11 +116,12 @@ def run(args):
         st.button(label="Next annotation", on_click=next_anno)
         
     col5, col6 = st.columns(2)
+    anno_keys = list(st.session_state["annotation"]['words'].keys())
     anno_words = st.session_state["annotation"]['words']
     with col5:
-        st.image(im.crop_img(img_path, anno_words[str(st.session_state['anno_index'])]['points'] ))
+        st.image(im.crop_img(img_path, anno_words[anno_keys[st.session_state['anno_index']]]['points'] ))
     with col6:
-        st.text_input(label=anno_words[str(st.session_state['anno_index'])]['transcription'], on_change=update_anno, key="update")
+        st.text_input(label=anno_words[anno_keys[st.session_state['anno_index']]]['transcription'], on_change=update_anno, key="update")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset Visualization')
@@ -133,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--annotation_file_name', 
         type=str, 
-        default='/opt/ml/input/data/ICDAR17_Korean/ufo/train.json',
+        default='/opt/ml/dataset/upstage_data.json',
         help='어노테이션 파일 명 (.json 생략)',
     )
     args = parser.parse_args()
