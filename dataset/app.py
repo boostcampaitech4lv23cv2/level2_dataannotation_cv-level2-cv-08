@@ -14,6 +14,7 @@ def run(args):
         st.session_state["annotation_files"] = anno.get_annotation_file()
         st.session_state['files'] = anno.get_image_files()
         st.session_state["image_index"] = 0
+        st.session_state["anno_index"] = 0
     else:
         anno.set_annotation_files(st.session_state["annotation_files"])
     
@@ -21,11 +22,13 @@ def run(args):
         st.session_state["annotation_files"] = anno.get_annotation_file()
         st.session_state['files'] = anno.get_image_files()
         st.session_state["image_index"] = 0
-
+        st.session_state["anno_index"] = 0
+        
     def next_image():
         image_index = st.session_state["image_index"]
         if image_index < len(st.session_state["files"]) - 1:
             st.session_state["image_index"] += 1
+            st.session_state["anno_index"] = 0
         else:
             st.warning('This is the last image.')
 
@@ -33,15 +36,42 @@ def run(args):
         image_index = st.session_state["image_index"]
         if image_index > 0:
             st.session_state["image_index"] -= 1
+            st.session_state["anno_index"] = 0
         else:
             st.warning('This is the first image.')
 
     def go_to_image():
         file_index = st.session_state["files"].index(st.session_state["file"])
         st.session_state["image_index"] = file_index
+        st.session_state['anno_index'] = 0
     
-    def go_to_idx(input_idx):
-        st.session_state["image_index"] = input_idx
+    def go_to_idx():
+        file_index = st.session_state["input_idx"]
+        st.session_state["image_index"] = file_index
+        st.session_state['anno_index'] = 0
+
+        
+    def next_anno():
+        anno_index = st.session_state["anno_index"]
+        if anno_index < len(st.session_state["annotation"]['words']) -1:
+            st.session_state["anno_index"] += 1
+        else:
+            st.warning('This is the last annotation')
+            
+    def previous_anno():
+        anno_index = st.session_state["anno_index"]
+        if anno_index > 0:
+            st.session_state["anno_index"] -= 1
+        else:
+            st.warning('This is the first annotation.')
+            
+    def update_anno():
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][str(st.session_state['anno_index'])].update({'transcription' : st.session_state['update']})
+        save_anno()
+        
+    def save_anno():
+        with open(os.path.join(args.root_dir, args.annotation_file_name), 'w') as f:
+            json.dump(st.session_state["annotation_files"], f, indent=4)
     
     n_files = len(st.session_state["files"])
     st.sidebar.write("Total files:", n_files)
@@ -56,13 +86,14 @@ def run(args):
         key="file",
     )
     
-    number = st.sidebar.number_input(
+    st.sidebar.number_input(
         'Search idx',
         min_value=0,
         max_value=n_files,
         format='%d',
+        on_change=go_to_idx,
+        key="input_idx"
     )
-    st.sidebar.button("", on_click=go_to_idx(number))
     
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -73,16 +104,23 @@ def run(args):
 
     img_file_name = st.session_state['files'][st.session_state["image_index"]]
     img_path = os.path.join(args.root_dir, img_file_name)
-    img_anno = st.session_state["annotation_files"]['images'][img_file_name]
-    im = ImageManager(img_path, img_anno)
+    st.session_state["annotation"] = st.session_state["annotation_files"]['images'][img_file_name]
+    im = ImageManager(img_path, st.session_state["annotation"])
     st.image(im.read_img(img_path))
     
-    for k, i in img_anno['words'].items():
-        col3, col4 = st.columns(2)
-        with col3:
-            st.image(im.crop_img(img_path,i['points']))
-        with col4:
-            st.text_input(i['transcription'])
+    
+    col3, col4 = st.columns(2)
+    with col3:
+        st.button(label="Previous annotation", on_click=previous_anno)
+    with col4:
+        st.button(label="Next annotation", on_click=next_anno)
+        
+    col5, col6 = st.columns(2)
+    anno_words = st.session_state["annotation"]['words']
+    with col5:
+        st.image(im.crop_img(img_path, anno_words[str(st.session_state['anno_index'])]['points'] ))
+    with col6:
+        st.text_input(label=anno_words[str(st.session_state['anno_index'])]['transcription'], on_change=update_anno, key="update")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset Visualization')

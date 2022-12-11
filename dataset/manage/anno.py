@@ -88,3 +88,13 @@ class ReadManager:
         
     def get_image(self, index):
         return self.files[index]
+
+    def update_data(self, filename, anno_idx, update_anno):
+        # update_anno = update_anno.encode('ascii', 'backslashreplace').decode('utf-8')
+        print(filename, anno_idx, update_anno)
+        print(self.data['images'][filename])
+        self.data['images'][filename]['words'][str(anno_idx)].update({'transcription' : update_anno})
+    
+    def save_data(self):
+        with open(os.path.join(self.root_path, self.filename), 'w') as f:
+            json.dump(self.data, f, indent=4)
