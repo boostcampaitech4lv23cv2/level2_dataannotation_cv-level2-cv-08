@@ -65,9 +65,28 @@ def run(args):
         else:
             st.warning('This is the first annotation.')
             
-    def update_anno():
-        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'transcription' : st.session_state['update']})
+    def update_tr():
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'transcription' : st.session_state['update_tr']})
         save_anno()
+    
+    def update_or():
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'orientation' : st.session_state['update_or']})
+        save_anno()
+    
+    def update_la():
+        user_input = [st.session_state['update_la']]
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'language' : user_input})
+        save_anno()
+        st.session_state['update_la'] = ""
+        
+    def update_ta():
+        if  st.session_state['update_ta'] == "None":
+            user_input = []
+        else:
+            user_input = st.session_state['update_ta'].split(" ")
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'tags' : user_input})
+        save_anno()
+        st.session_state['update_ta'] = ""
         
     def save_anno():
         with open(os.path.join(args.root_dir, args.annotation_file_name), 'w') as f:
@@ -94,6 +113,7 @@ def run(args):
         on_change=go_to_idx,
         key="input_idx"
     )
+    # TODO: clean code
     
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -108,7 +128,6 @@ def run(args):
     im = ImageManager(img_path, st.session_state["annotation"])
     st.image(im.read_img(img_path))
     
-    
     col3, col4 = st.columns(2)
     with col3:
         st.button(label="Previous annotation", on_click=previous_anno)
@@ -117,11 +136,22 @@ def run(args):
         
     col5, col6 = st.columns(2)
     anno_keys = list(st.session_state["annotation"]['words'].keys())
-    anno_words = st.session_state["annotation"]['words']
+    anno_words = st.session_state["annotation"]['words'][anno_keys[st.session_state['anno_index']]]
     with col5:
-        st.image(im.crop_img(img_path, anno_words[anno_keys[st.session_state['anno_index']]]['points'] ))
+        st.image(im.crop_img(img_path, anno_words['points'] ))
     with col6:
-        st.text_input(label=anno_words[anno_keys[st.session_state['anno_index']]]['transcription'], on_change=update_anno, key="update")
+        if anno_words['transcription'] == None:
+            st.write("pass")
+        else:
+            st.text_input(label=anno_words['transcription'], on_change=update_tr, key="update_tr")
+            st.text_input(label=anno_words['orientation'], on_change=update_or, key="update_or")
+            st.markdown(f">language : **{anno_words['language']}**")
+            st.text_input(label="언어 입력 (ko, en, others)", on_change=update_la, key="update_la")
+            st.markdown(f">tags : **{anno_words['tags']}**")
+            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark'",
+                        on_change=update_ta, key="update_ta")
+            st.markdown(f">illegibility : **{anno_words['illegibility']}**")
+
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset Visualization')
