@@ -46,8 +46,8 @@ def json_merge(path:str, merge_list:list, save_filename:str):
         temp = check_words(temp)
         data['images'].update(temp['images'])
     
-    # with open(os.path.join(path, save_filename), 'w') as outfile:
-    #     json.dump(data, outfile, indent=4)
+    with open(os.path.join(path, save_filename), 'w') as outfile:
+        json.dump(data, outfile, indent=4)
         
 
 if __name__ == "__main__":
