@@ -148,7 +148,7 @@ def run(args):
             st.markdown(f">language : **{anno_words['language']}**")
             st.text_input(label="언어 입력 (ko, en, others)", on_change=update_la, key="update_la")
             st.markdown(f">tags : **{anno_words['tags']}**")
-            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark'",
+            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark','embossing'",
                         on_change=update_ta, key="update_ta")
             st.markdown(f">illegibility : **{anno_words['illegibility']}**")
 
