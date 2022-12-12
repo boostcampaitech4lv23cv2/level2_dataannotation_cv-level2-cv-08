@@ -65,6 +65,9 @@ def run(args):
         else:
             st.warning('This is the first annotation.')
             
+    def go_to_anno():
+        st.session_state['anno_index'] = st.session_state['go2anno']
+            
     def update_tr():
         st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'transcription' : st.session_state['update_tr']})
         save_anno()
@@ -87,6 +90,11 @@ def run(args):
         st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'tags' : user_input})
         save_anno()
         st.session_state['update_ta'] = ""
+    
+    def update_il():
+        st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'illegibility' : st.session_state['update_il']})
+        save_anno()
+        st.session_state['update_il'] = None
         
     def save_anno():
         with open(os.path.join(args.root_dir, args.annotation_file_name), 'w') as f:
@@ -139,6 +147,8 @@ def run(args):
     anno_words = st.session_state["annotation"]['words'][anno_keys[st.session_state['anno_index']]]
     with col5:
         st.image(im.crop_img(img_path, anno_words['points'] ))
+        st.write(anno_keys[st.session_state['anno_index']])
+        st.number_input("이동할 annotaion idx", min_value=0, max_value=len(st.session_state["annotation"]['words']) -1, format="%d",on_change=go_to_anno, key="go2anno")
     with col6:
         if anno_words['transcription'] == None:
             st.write("pass")
@@ -151,6 +161,7 @@ def run(args):
             st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark'",
                         on_change=update_ta, key="update_ta")
             st.markdown(f">illegibility : **{anno_words['illegibility']}**")
+            st.selectbox("제외 영역", options=[False, True, None], on_change=update_il, key='update_il')
 
     
 if __name__ == "__main__":
