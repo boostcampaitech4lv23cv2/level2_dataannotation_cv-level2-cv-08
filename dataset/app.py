@@ -165,7 +165,7 @@ if __name__ == "__main__":
         '--annotation_file_name', 
         type=str, 
         default='/opt/ml/dataset/upstage_data.json',
-        help='어노테이션 파일 명 (.json 생략)',
+        help='어노테이션 파일 명',
     )
     args = parser.parse_args()
     
