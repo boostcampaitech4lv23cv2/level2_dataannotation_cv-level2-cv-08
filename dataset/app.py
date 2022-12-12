@@ -6,7 +6,6 @@ import streamlit as st
 
 from manage.anno import ReadManager, ImageManager
 # streamlit run app.py --server.port=30001 --server.fileWatcherType none
-
 def run(args):
     
     anno = ReadManager(args.annotation_file_name, args.root_dir)
@@ -74,7 +73,10 @@ def run(args):
         save_anno()
     
     def update_la():
-        user_input = [st.session_state['update_la']]
+        if st.session_state['update_la'] == "None":
+            user_input = None
+        else :
+            user_input = st.session_state['update_la'].split(" ")
         st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'language' : user_input})
         save_anno()
         st.session_state['update_la'] = ""
@@ -82,6 +84,12 @@ def run(args):
     def update_ta():
         if  st.session_state['update_ta'] == "None":
             user_input = []
+        elif st.session_state['update_ta'] == "excluded-region":
+            user_input = [st.session_state['update_ta']]
+            st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'transcription' : None})
+            st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'language' : None})
+            st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'orientation' : None})
+            st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'illegibility' : True})    
         else:
             user_input = st.session_state['update_ta'].split(" ")
         st.session_state["annotation_files"]['images'][img_file_name]['words'][anno_keys[st.session_state['anno_index']]].update({'tags' : user_input})
@@ -146,9 +154,9 @@ def run(args):
             st.text_input(label=anno_words['transcription'], on_change=update_tr, key="update_tr")
             st.text_input(label=anno_words['orientation'], on_change=update_or, key="update_or")
             st.markdown(f">language : **{anno_words['language']}**")
-            st.text_input(label="언어 입력 (ko, en, others)", on_change=update_la, key="update_la")
+            st.text_input(label="언어 입력 (ko, en, others, None)", on_change=update_la, key="update_la")
             st.markdown(f">tags : **{anno_words['tags']}**")
-            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark','embossing'",
+            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark','embossing', ** 제외영역 설정'excluded-region'",
                         on_change=update_ta, key="update_ta")
             st.markdown(f">illegibility : **{anno_words['illegibility']}**")
 
@@ -164,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--annotation_file_name', 
         type=str, 
-        default='/opt/ml/dataset/upstage_data.json',
+        default='/opt/ml/input/data/ICDAR17_Korean/ufo/upstage_data.json',
         help='어노테이션 파일 명 (.json 생략)',
     )
     args = parser.parse_args()
