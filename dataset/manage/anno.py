@@ -20,7 +20,14 @@ class ImageManager:
         self._img = Image.open(filename)
         self.point = Tuple[int, int]
         self.anno = anno
-        
+
+    def resize_img(self, img:Image, target_h: int = 1000):
+        h, w = img.height, img.width
+        ratio = target_h/h
+        target_w = int(ratio * w)
+        img = img.resize((target_w, target_h))
+        return img, ratio
+    
     def read_img(self, path: str, target_h: int = 1000) -> Image:
         """이미지 로드 후 텍스트 영역 폴리곤을 표시하여 반환한다."""
         # load image, annotation
@@ -30,10 +37,7 @@ class ImageManager:
         words = ann['words']
 
         # resize
-        h, w = img.height, img.width
-        ratio = target_h/h
-        target_w = int(ratio * w)
-        img = img.resize((target_w, target_h))
+        img, ratio = self.resize_img(img)
 
         # draw polygon
         for key, val in words.items():
@@ -51,12 +55,13 @@ class ImageManager:
         # 폴리곤 선 너비 지정이 안되어 line으로 표시
         img_draw.line(pts, width=3, fill=(0, 255, 255) if not illegibility else (255, 0, 255))
     
-    def crop_img(self, path: str, points: list) -> Image:
+    def crop_img(self, path: str, points: list, max_size:int = 400) -> Image:
         """이미지의 points 영역을 잘라낸다."""
         img = Image.open(path)
         x_min, y_min = np.min(points, axis=0)
         x_max, y_max = np.max(points, axis=0)
         img = img.crop((x_min,y_min, x_max, y_max))
+        img, _ = self.resize_img(img, target_h=300)
         return img
     
 class ReadManager:
