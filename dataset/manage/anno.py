@@ -58,6 +58,7 @@ class ImageManager:
     def crop_img(self, path: str, points: list, max_size:int = 400) -> Image:
         """이미지의 points 영역을 잘라낸다."""
         img = Image.open(path)
+        img = ImageOps.exif_transpose(img)  # 이미지 정보에 따라 이미지를 회전
         x_min, y_min = np.min(points, axis=0)
         x_max, y_max = np.max(points, axis=0)
         img = img.crop((x_min,y_min, x_max, y_max))
