@@ -14,6 +14,7 @@ def run(args):
         st.session_state['files'] = anno.get_image_files()
         st.session_state["image_index"] = 0
         st.session_state["anno_index"] = 0
+        st.session_state["compare"] = args.compare
     else:
         anno.set_annotation_files(st.session_state["annotation_files"])
     
@@ -22,7 +23,11 @@ def run(args):
         st.session_state['files'] = anno.get_image_files()
         st.session_state["image_index"] = 0
         st.session_state["anno_index"] = 0
-        
+        st.session_state["compare"] = args.compare
+    
+    def comp():
+        st.session_state['compare'] = (st.session_state['compare']+1) % 2
+    
     def next_image():
         image_index = st.session_state["image_index"]
         if image_index < len(st.session_state["files"]) - 1:
@@ -129,7 +134,6 @@ def run(args):
         on_change=go_to_idx,
         key="input_idx"
     )
-    # TODO: clean code
     
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -138,38 +142,58 @@ def run(args):
         st.button(label="Next image", on_click=next_image)
     st.sidebar.button(label="Refresh", on_click=refresh)
 
+    # 수정 비교 버튼
+    st.sidebar.button(label="compare", on_click=comp)
+        
+    
     img_file_name = st.session_state['files'][st.session_state["image_index"]]
     img_path = os.path.join(args.root_dir, img_file_name)
     st.session_state["annotation"] = st.session_state["annotation_files"]['images'][img_file_name]
     im = ImageManager(img_path, st.session_state["annotation"])
-    st.image(im.read_img(img_path))
     
-    col3, col4 = st.columns(2)
-    with col3:
-        st.button(label="Previous annotation", on_click=previous_anno)
-    with col4:
-        st.button(label="Next annotation", on_click=next_anno)
+    if st.session_state['compare']:
+        if "sub_annotation_files" not in st.session_state:
+            sub = ReadManager(args.sub_annotation_file_name, args.root_dir)
+            st.session_state["sub_annotation_files"] = sub.get_annotation_file()
+            st.session_state['sub_files'] = sub.get_image_files()
+        if st.session_state["sub_annotation_files"]['images'].get(img_file_name):
+            st.session_state["sub_annotation"] = st.session_state["sub_annotation_files"]['images'][img_file_name]
+            su = ImageManager(img_path, st.session_state["sub_annotation"])
+            
+        col3, col4 = st.columns(2)
+        with col3:
+            st.image(im.read_img(img_path))
+        with col4:
+            st.image(su.read_img(img_path))
+    else:
+        st.image(im.read_img(img_path))
         
-    col5, col6 = st.columns(2)
-    anno_keys = list(st.session_state["annotation"]['words'].keys())
-    anno_words = st.session_state["annotation"]['words'][anno_keys[st.session_state['anno_index']]]
-    with col5:
-        st.image(im.crop_img(img_path, anno_words['points'] ))
-        st.write(anno_keys[st.session_state['anno_index']])
-        st.number_input("이동할 annotaion idx", min_value=0, max_value=len(st.session_state["annotation"]['words']) -1, format="%d",on_change=go_to_anno, key="go2anno")
-    with col6:
-        if anno_words['transcription'] == None:
-            st.write("pass")
-        else:
-            st.text_input(label=anno_words['transcription'], on_change=update_tr, key="update_tr")
-            st.text_input(label=anno_words['orientation'], on_change=update_or, key="update_or")
-            st.markdown(f">language : **{anno_words['language']}**")
-            st.text_input(label="언어 입력 (ko, en, others, None)", on_change=update_la, key="update_la")
-            st.markdown(f">tags : **{anno_words['tags']}**")
-            st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark','embossing', ** 제외영역 설정'excluded-region'",
-                        on_change=update_ta, key="update_ta")
-            st.markdown(f">illegibility : **{anno_words['illegibility']}**")
-            st.selectbox("제외 영역", options=[False, True, None], on_change=update_il, key='update_il')
+        col3, col4 = st.columns(2)
+        with col3:
+            st.button(label="Previous annotation", on_click=previous_anno)
+        with col4:
+            st.button(label="Next annotation", on_click=next_anno)
+            
+        col5, col6 = st.columns(2)
+        anno_keys = list(st.session_state["annotation"]['words'].keys())
+        anno_words = st.session_state["annotation"]['words'][anno_keys[st.session_state['anno_index']]]
+        with col5:
+            st.image(im.crop_img(img_path, anno_words['points'] ))
+            st.write(anno_keys[st.session_state['anno_index']])
+            st.number_input("이동할 annotaion idx", min_value=0, max_value=len(st.session_state["annotation"]['words']) -1, format="%d",on_change=go_to_anno, key="go2anno")
+        with col6:
+            if anno_words['transcription'] == None:
+                st.write("pass")
+            else:
+                st.text_input(label=anno_words['transcription'], on_change=update_tr, key="update_tr")
+                st.text_input(label=anno_words['orientation'], on_change=update_or, key="update_or")
+                st.markdown(f">language : **{anno_words['language']}**")
+                st.text_input(label="언어 입력 (ko, en, others, None)", on_change=update_la, key="update_la")
+                st.markdown(f">tags : **{anno_words['tags']}**")
+                st.text_input(label="'None','handwriting','logo','mirrored','occlusion','see-through','watermark','embossing', ** 제외영역 설정'excluded-region'",
+                            on_change=update_ta, key="update_ta")
+                st.markdown(f">illegibility : **{anno_words['illegibility']}**")
+                st.selectbox("제외 영역", options=[False, True, None], on_change=update_il, key='update_il')
 
     
 if __name__ == "__main__":
@@ -183,8 +207,21 @@ if __name__ == "__main__":
     parser.add_argument(
         '--annotation_file_name', 
         type=str, 
-        default='/opt/ml/dataset/upstage_data.json',
-        help='어노테이션 파일 명',
+        # default='/opt/ml/dataset/upstage_data.json',
+        default='/opt/ml/dataset/json/upstage_data.json',
+        help='어노테이션 파일명',
+    )
+    parser.add_argument(
+        '--sub_annotation_file_name', 
+        type=str, 
+        default='/opt/ml/input/data/ICDAR17_Korean/ufo/train_non_split.json',
+        help='비교 어노테이션 파일명',
+    )
+    parser.add_argument(
+        "--compare",
+        type=bool,
+        default=False,
+        help="annotation 수정 비교 유무"
     )
     args = parser.parse_args()
     
